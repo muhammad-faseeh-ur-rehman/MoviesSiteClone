@@ -1,94 +1,54 @@
-const movies = [
-    {
-        id: 1,
-        title: "The Last Adventure",
-        year: 2026,
-        genre: "Action",
-        rating: 8.9,
-        image: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=600&q=80",
+const API_KEY = "PUT_YOUR_TMDB_API_KEY_HERE";
+const BASE_URL = "https://api.themoviedb.org/3";
+const IMAGE_URL = "https://image.tmdb.org/t/p/w500";
+let movies = [];
+let currentPage = 1;
+const genres = {
+    28: "Action",
+    12: "Adventure",
+    16: "Animation",
+    35: "Comedy",
+    80: "Crime",
+    99: "Documentary",
+    18: "Drama",
+    10751: "Family",
+    14: "Fantasy",
+    36: "History",
+    27: "Horror",
+    10402: "Music",
+    9648: "Mystery",
+    10749: "Romance",
+    878: "Sci-Fi",
+    53: "Thriller",
+    10752: "War",
+    37: "Western"
+};
+function formatMovie(movie) {
+    return {
+        id: movie.id,
+        title:
+            movie.title || "Unknown",
+        year:
+            movie.release_date
+                ? movie.release_date.split("-")[0]
+                : "N/A",
+        genre:
+            movie.genre_ids?.length
+                ? genres[movie.genre_ids[0]] || "Other"
+                : "Other",
+        rating:
+            movie.vote_average
+                ? movie.vote_average.toFixed(1)
+                : "N/A",
+        image:
+            movie.poster_path
+                ? IMAGE_URL + movie.poster_path
+                : "https://via.placeholder.com/500x750?text=No+Poster",
         description:
-            "A fearless explorer travels beyond the known world to uncover an ancient secret that could change humanity forever."
-    },
-
-    {
-        id: 2,
-        title: "Dark Horizon",
-        year: 2025,
-        genre: "Sci-Fi",
-        rating: 8.7,
-        image: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=600&q=80",
-        description:
-            "A mysterious signal from deep space leads a team of astronauts toward an unknown civilization."
-    },
-
-    {
-        id: 3,
-        title: "Midnight City",
-        year: 2025,
-        genre: "Drama",
-        rating: 8.3,
-        image: "https://images.unsplash.com/photo-1519608487953-e999c86e7455?auto=format&fit=crop&w=600&q=80",
-        description:
-            "A young photographer discovers a hidden story behind the people living in a mysterious city."
-    },
-
-    {
-        id: 4,
-        title: "The Chase",
-        year: 2026,
-        genre: "Action",
-        rating: 8.5,
-        image: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=600&q=80",
-        description:
-            "A former detective finds himself caught in a dangerous chase across the city."
-    },
-
-    {
-        id: 5,
-        title: "Lost Planet",
-        year: 2025,
-        genre: "Sci-Fi",
-        rating: 8.8,
-        image: "https://images.unsplash.com/photo-1446776877081-d282a0f896e2?auto=format&fit=crop&w=600&q=80",
-        description:
-            "A crew lands on a distant planet where nothing is quite what it seems."
-    },
-
-    {
-        id: 6,
-        title: "Crazy Weekend",
-        year: 2024,
-        genre: "Comedy",
-        rating: 7.9,
-        image: "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=600&q=80",
-        description:
-            "Four friends plan the perfect weekend but everything goes completely wrong."
-    },
-
-    {
-        id: 7,
-        title: "Broken Dreams",
-        year: 2024,
-        genre: "Drama",
-        rating: 8.2,
-        image: "https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=600&q=80",
-        description:
-            "A musician struggles to rebuild his life after losing everything."
-    },
-
-    {
-        id: 8,
-        title: "Shadow Warrior",
-        year: 2026,
-        genre: "Action",
-        rating: 8.6,
-        image: "https://images.unsplash.com/photo-1531259683007-016a7b628fc3?auto=format&fit=crop&w=600&q=80",
-        description:
-            "A mysterious warrior returns to his homeland to protect it from an ancient enemy."
-    }
-
-];
-
+            movie.overview ||
+            "No description available."
+    };
+}
 function createMovieCard(movie) {
     return `
         <div class="col-6 col-md-4 col-lg-3">
@@ -99,6 +59,7 @@ function createMovieCard(movie) {
                 <img
                     src="${movie.image}"
                     alt="${movie.title}"
+                    loading="lazy"
                 >
                 <div class="movie-play">
                     <i class="bi bi-play-fill"></i>
@@ -112,7 +73,7 @@ function createMovieCard(movie) {
                         &nbsp; • &nbsp;
                         ${movie.genre}
                         <span class="movie-rating">
-                            &nbsp; <i class="fa-regular fa-star"></i> ${movie.rating}
+                            &nbsp; ⭐ ${movie.rating}
                         </span>
                     </div>
                 </div>
@@ -120,163 +81,371 @@ function createMovieCard(movie) {
         </div>
     `;
 }
-
 function displayMovies(list, elementId) {
-    const container = document.getElementById(elementId);
-    container.innerHTML = "";
-    list.forEach(movie => {
-        container.innerHTML += createMovieCard(movie);
-    });
+    const container =
+        document.getElementById(elementId);
+    container.innerHTML =
+        list.map(createMovieCard).join("");
 }
-
-displayMovies(
-    movies.slice(0, 4),
-    "trendingMovies"
-);
-
-displayMovies(
-    movies.slice(4, 8),
-    "popularMovies"
-);
-displayMovies(
-    movies,
-    "allMovies"
-);
-
-function filterMovies(category, button) {
-    document.querySelectorAll(".category-btn").forEach(btn => {
-        btn.classList.remove("active");
-
-    });
-    button.classList.add("active");
-    if (category === "all") {
+async function loadPopularMovies() {
+    try {
+        const response = await fetch(
+            `${BASE_URL}/movie/popular?api_key=${API_KEY}&language=en-US&page=1`
+        );
+        const data = await response.json();
+        const popular =
+            data.results.map(formatMovie);
+        movies = popular;
+        displayMovies(
+            popular.slice(0, 8),
+            "popularMovies"
+        );
+    } catch (error) {
+        console.error(
+            "Popular movies error:",
+            error
+        );
+    }
+}
+async function loadTrendingMovies() {
+    try {
+        const response = await fetch(
+            `${BASE_URL}/trending/movie/week?api_key=${API_KEY}`
+        );
+        const data =
+            await response.json();
+        const trending =
+            data.results.map(formatMovie);
+        displayMovies(
+            trending.slice(0, 8),
+            "trendingMovies"
+        );
+    } catch (error) {
+        console.error(
+            "Trending movies error:",
+            error
+        );
+    }
+}
+async function loadMovies(page = 1) {
+    try {
+        const response = await fetch(
+            `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&sort_by=popularity.desc&page=${page}`
+        );
+        const data =
+            await response.json();
+        const newMovies =
+            data.results.map(formatMovie);
+        if (page === 1) {
+            movies = newMovies;
+        } else {
+            movies = [
+                ...movies,
+                ...newMovies
+            ];
+        }
         displayMovies(
             movies,
             "allMovies"
         );
-    } else {
-        const filteredMovies = movies.filter(movie => {
-            return movie.genre === category;
+    } catch (error) {
+        console.error(
+            "Movies loading error:",
+            error
+        );
+    }
+}
+async function filterMovies(category, button) {
+    document
+        .querySelectorAll(".category-btn")
+        .forEach(btn => {
+            btn.classList.remove("active");
         });
+    button.classList.add("active");
+    if (category === "all") {
+        currentPage = 1;
+        await loadMovies(1);
+        return;
+    }
+    const genreIDs = {
+        Action: 28,
+        Drama: 18,
+        Comedy: 35,
+        "Sci-Fi": 878
+    };
+    try {
+        const genreID =
+            genreIDs[category];
+        const response =
+            await fetch(
+                `${BASE_URL}/discover/movie?api_key=${API_KEY}&with_genres=${genreID}&sort_by=popularity.desc&page=1`
+            );
+        const data =
+            await response.json();
+        movies =
+            data.results.map(formatMovie);
         displayMovies(
-            filteredMovies,
+            movies,
             "allMovies"
         );
+    } catch (error) {
+        console.error(
+            "Filter error:",
+            error
+        );
     }
 }
-function showMovie(id) {
-    const movie = movies.find(movie => movie.id === id);
-    if (!movie) return;
-    document.getElementById("modalTitle").textContent =
-        movie.title;
-    document.getElementById("modalMovieTitle").textContent =
-        movie.title;
-    document.getElementById("modalImage").src =
-        movie.image;
-    document.getElementById("modalYear").textContent =
-        movie.year;
-    document.getElementById("modalGenre").textContent =
-        movie.genre;
-    document.getElementById("modalRating").textContent =
-        movie.rating;
-    document.getElementById("modalDescription").textContent =
-        movie.description;
-    const modal = new bootstrap.Modal(
-        document.getElementById("movieModal")
-    );
-    modal.show();
-}
-const searchButton =
-    document.getElementById("searchButton");
-const searchContainer =
-    document.getElementById("searchContainer");
-const closeSearch =
-    document.getElementById("closeSearch");
-const searchInput =
-    document.getElementById("searchInput");
-searchButton.addEventListener("click", () => {
-    searchContainer.classList.add("show");
-    searchInput.focus();
-});
-closeSearch.addEventListener("click", () => {
-    searchContainer.classList.remove("show");
-    searchInput.value = "";
-    const searchResults =
-        document.getElementById("searchResults");
-    searchResults.innerHTML = "";
-    searchResults.style.display = "none";
-});
-searchInput.addEventListener("input", () => {
+async function showMovie(id) {
+    try {
+        const response =
+            await fetch(
 
-    const searchValue =
-        searchInput.value.toLowerCase().trim();
+                `${BASE_URL}/movie/${id}?api_key=${API_KEY}&language=en-US`
 
-    const searchResults =
-        document.getElementById("searchResults");
-    if (searchValue === "") {
-        searchResults.innerHTML = "";
-        searchResults.style.display = "none";
-        return;
-    }
-    const filteredMovies = movies.filter(movie => {
-        return (
-            movie.title
-                .toLowerCase()
-                .includes(searchValue)
+            );
+        const movie =
+            await response.json();
+        document.getElementById(
+            "modalTitle"
+        ).textContent =
+            movie.title;
 
-            ||
-            movie.genre
-                .toLowerCase()
-                .includes(searchValue)
+
+        document.getElementById(
+            "modalMovieTitle"
+        ).textContent =
+            movie.title;
+
+
+        document.getElementById(
+            "modalImage"
+        ).src =
+            movie.poster_path
+                ? IMAGE_URL + movie.poster_path
+                : "";
+
+
+        document.getElementById(
+            "modalYear"
+        ).textContent =
+            movie.release_date
+                ? movie.release_date.split("-")[0]
+                : "N/A";
+
+
+        document.getElementById(
+            "modalGenre"
+        ).textContent =
+            movie.genres
+                ?.map(g => g.name)
+                .join(", ") ||
+            "Unknown";
+
+
+        document.getElementById(
+            "modalRating"
+        ).textContent =
+            movie.vote_average
+                ?.toFixed(1) ||
+            "N/A";
+
+
+        document.getElementById(
+            "modalDescription"
+        ).textContent =
+            movie.overview ||
+            "No description available.";
+
+
+        const modal =
+            new bootstrap.Modal(
+
+                document.getElementById(
+                    "movieModal"
+                )
+
+            );
+
+        modal.show();
+
+    } catch (error) {
+
+        console.error(
+            "Movie details error:",
+            error
         );
 
-    });
+    }
 
-    if (filteredMovies.length === 0) {
-        searchResults.innerHTML = `
-            <div class="no-results">
-                No movies found 😔
-            </div>
-        `;
-        searchResults.style.display = "block";
-        return;
+}
+
+const searchButton =
+    document.getElementById(
+        "searchButton"
+    );
+const searchContainer =
+    document.getElementById(
+        "searchContainer"
+    );
+const closeSearch =
+    document.getElementById(
+        "closeSearch"
+    );
+const searchInput =
+    document.getElementById(
+        "searchInput"
+    );
+const searchResults =
+    document.getElementById(
+        "searchResults"
+    );
+
+searchButton.addEventListener(
+    "click",
+    () => {
+        searchContainer
+            .classList.add("show");
+        searchInput.focus();
     }
-    searchResults.innerHTML = filteredMovies
-        .map(movie => {
-            return `
-                <div
-                    class="search-result-item"
-                    onclick="showMovie(${movie.id})"
-                >
-                    <img
-                        src="${movie.image}"
-                        alt="${movie.title}"
-                    >
-                    <div class="search-result-info">
-                        <h6>
-                            ${movie.title}
-                        </h6>
-                        <p>
-                            ${movie.year}
-                            •
-                            ${movie.genre}
-                        </p>
-                        <p class="search-result-rating">
-                            ⭐ ${movie.rating}
-                        </p>
-                    </div>
+);
+closeSearch.addEventListener(
+    "click",
+    () => {
+        searchContainer
+            .classList.remove("show");
+        searchInput.value = "";
+        searchResults.innerHTML = "";
+        searchResults.style.display =
+            "none";
+    }
+);
+
+let searchTimer;
+searchInput.addEventListener(
+    "input",
+    () => {
+        clearTimeout(searchTimer);
+        const searchValue =
+            searchInput.value.trim();
+
+        if (!searchValue) {
+            searchResults.innerHTML = "";
+            searchResults.style.display =
+                "none";
+            return;
+        }
+        searchTimer =
+            setTimeout(
+                () =>
+                    searchMovies(
+                        searchValue
+                    ),
+                400
+            );
+    }
+);
+async function searchMovies(query) {
+    try {
+        const response =
+            await fetch(
+                `${BASE_URL}/search/movie?api_key=${API_KEY}&query=${encodeURIComponent(query)}&language=en-US&page=1&include_adult=false`
+
+            );
+        const data =
+            await response.json();
+        if (
+            !data.results ||
+            data.results.length === 0
+        ) {
+            searchResults.innerHTML =
+                `
+                <div class="no-results">
+                    No movies found 😔
                 </div>
-            `;
-        })
-        .join("");
-    searchResults.style.display = "block";
-});
-window.addEventListener("scroll", () => {
-    const navbar =
-        document.querySelector(".navbar");
-    if (window.scrollY > 50) {
-        navbar.classList.add("scrolled");
-    } else {
-        navbar.classList.remove("scrolled");
+                `;
+            searchResults.style.display =
+                "block";
+            return;
+        }
+        searchResults.innerHTML =
+            data.results
+                .slice(0, 8)
+                .map(movie => {
+                    const formatted =
+                        formatMovie(movie);
+                    return `
+                        <div
+                            class="search-result-item"
+                            onclick="showMovie(${formatted.id})"
+                        >
+                            <img
+                                src="${formatted.image}"
+                                alt="${formatted.title}"
+                            >
+                            <div
+                                class="search-result-info"
+                            >
+                                <h6>
+                                    ${formatted.title}
+                                </h6>
+                                <p>
+                                    ${formatted.year}
+                                    •
+                                    ${formatted.genre}
+                                </p>
+                                <p
+                                    class="search-result-rating"
+                                >
+                                    ⭐
+                                    ${formatted.rating}
+                                </p>
+                            </div>
+                        </div>
+                    `;
+
+                })
+                .join("");
+        searchResults.style.display =
+            "block";
+    } catch (error) {
+        console.error(
+            "Search error:",
+            error
+        );
     }
-});
+}
+window.addEventListener(
+    "scroll",
+    () => {
+        const navbar =
+            document.querySelector(
+                ".navbar"
+            );
+
+        if (window.scrollY > 50) {
+
+            navbar.classList.add(
+                "scrolled"
+            );
+
+        } else {
+
+            navbar.classList.remove(
+                "scrolled"
+            );
+
+        }
+
+    }
+);
+
+
+// ===============================
+// LOAD WEBSITE
+// ===============================
+
+loadTrendingMovies();
+
+loadPopularMovies();
+
+loadMovies();
